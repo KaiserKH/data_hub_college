@@ -3,11 +3,12 @@
  */
 
 .quick-actions {
-    background: white;
+    background: var(--surface-color);
     padding: 1.5rem;
-    border-radius: 8px;
+    border-radius: 14px;
     margin: 1.5rem 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(17, 94, 89, 0.08);
 }
 
 .quick-actions h3 {
@@ -37,16 +38,17 @@
     grid-template-columns: 1fr auto auto;
     gap: 1rem;
     padding: 1.5rem;
-    background: white;
+    background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 14px;
     align-items: center;
     transition: all 0.3s;
 }
 
 .form-item:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
     border-color: var(--primary-color);
+    transform: translateY(-2px);
 }
 
 .form-info {

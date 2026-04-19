@@ -2,12 +2,12 @@
 /**
  * User Profile Management Page
  */
-require '../config.php';
-require '../includes/auth.php';
-require '../includes/functions.php';
-require '../includes/csrf.php';
-require '../includes/encryption.php';
-require '../includes/college_features.php';
+require __DIR__ . '/config.php';
+require __DIR__ . '/includes/auth.php';
+require __DIR__ . '/includes/functions.php';
+require __DIR__ . '/includes/csrf.php';
+require __DIR__ . '/includes/encryption.php';
+require __DIR__ . '/includes/college_features.php';
 
 requireLogin();
 
@@ -60,25 +60,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $file = $_FILES['profile_picture'];
                 $allowed_mimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
                 $max_size = 5 * 1024 * 1024; // 5MB
 
-                if ($file['size'] > $max_size) {
-                    $errors[] = 'File size exceeds 5MB limit.';
-                } elseif (!in_array($file['type'], $allowed_mimes)) {
-                    $errors[] = 'Invalid file type. Only JPG, PNG, GIF, WebP allowed.';
-                } elseif ($file['error'] !== UPLOAD_ERR_OK) {
+                if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
                     $errors[] = 'File upload error.';
+                } elseif (!is_uploaded_file($file['tmp_name'])) {
+                    $errors[] = 'Invalid upload request.';
+                } elseif ($file['size'] > $max_size) {
+                    $errors[] = 'File size exceeds 5MB limit.';
                 } else {
+                    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                    if (!in_array($ext, $allowed_extensions, true)) {
+                        $errors[] = 'Invalid file extension. Only JPG, PNG, GIF, WebP allowed.';
+                    }
+
+                    $detected_mime = null;
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    if ($finfo) {
+                        $detected_mime = finfo_file($finfo, $file['tmp_name']);
+                        finfo_close($finfo);
+                    }
+
+                    if (!$detected_mime || !in_array($detected_mime, $allowed_mimes, true)) {
+                        $errors[] = 'Invalid file type. Only JPG, PNG, GIF, WebP allowed.';
+                    }
+                }
+
+                if (empty($errors)) {
                     $upload_dir = UPLOADS_PATH . '/profiles';
                     if (!is_dir($upload_dir)) {
                         mkdir($upload_dir, 0755, true);
                     }
 
-                    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-                    $filename = 'profile_' . $user['id'] . '_' . time() . '.' . $ext;
+                    $filename = bin2hex(random_bytes(16)) . '.' . $ext;
                     $filepath = $upload_dir . '/' . $filename;
 
                     if (move_uploaded_file($file['tmp_name'], $filepath)) {
+                        chmod($filepath, 0644);
                         updateProfilePicture($user['id'], $filename);
                         $profile = getUserProfile($user['id']);
                         $message = 'Profile picture updated successfully.';

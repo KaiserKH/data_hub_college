@@ -48,7 +48,7 @@ function setAppSetting($key, $value, $updatedBy = null) {
  * Determine if security controls are globally enabled.
  */
 function isSecurityControlsEnabled() {
-    return getAppSettingBool('security_controls_enabled', false);
+    return getAppSettingBool('security_controls_enabled', true);
 }
 
 /**

@@ -16,12 +16,41 @@ $errors = [];
 
 processExpiredAttendanceSessions();
 
+function checkAttendanceScanRateLimit($student_id, $max_attempts = 6, $window_seconds = 60) {
+    startSession();
+    $key = 'attendance_scan_attempts_' . (int)$student_id;
+    $now = time();
+
+    if (!isset($_SESSION[$key]) || !is_array($_SESSION[$key])) {
+        $_SESSION[$key] = [];
+    }
+
+    $_SESSION[$key] = array_values(array_filter($_SESSION[$key], function ($timestamp) use ($now, $window_seconds) {
+        return ($now - (int)$timestamp) < $window_seconds;
+    }));
+
+    return count($_SESSION[$key]) < $max_attempts;
+}
+
+function recordAttendanceScanAttempt($student_id) {
+    startSession();
+    $key = 'attendance_scan_attempts_' . (int)$student_id;
+    if (!isset($_SESSION[$key]) || !is_array($_SESSION[$key])) {
+        $_SESSION[$key] = [];
+    }
+    $_SESSION[$key][] = time();
+}
+
 $code = strtoupper(trim($_GET['code'] ?? $_POST['code'] ?? ''));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCsrfToken()) {
         $errors[] = 'Invalid security token.';
+    } elseif (!checkAttendanceScanRateLimit($user['id'])) {
+        $errors[] = 'Too many attempts. Please wait 1 minute and try again.';
     } else {
+        recordAttendanceScanAttempt($user['id']);
+
         if ($code === '') {
             $errors[] = 'Attendance code is required.';
         } else {

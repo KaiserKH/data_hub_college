@@ -89,7 +89,7 @@ $csrf_token = generateCsrfToken();
 
                 <div class="card">
                     <h2>Feature Toggles</h2>
-                    <p style="color:#666;margin-bottom:1rem;">System access remains available by default. Enable Security Controls to enforce role-based page protection and optional 2FA.</p>
+                    <p style="color:#666;margin-bottom:1rem;">Role-based page protection is enabled by default. Keep Security Controls on to enforce role checks and optional 2FA.</p>
 
                     <form method="POST" class="form">
                         <div class="form-group" style="flex-direction: row; align-items: center; gap: 0.75rem;">

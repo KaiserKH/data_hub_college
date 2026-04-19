@@ -120,7 +120,7 @@ function isRoleProtectionEnabled() {
         return isSecurityControlsEnabled();
     }
 
-    return false;
+    return true;
 }
 
 /**
