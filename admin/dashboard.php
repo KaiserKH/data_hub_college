@@ -5,6 +5,8 @@
 require '../config.php';
 require '../includes/auth.php';
 require '../includes/functions.php';
+require '../includes/app_features.php';
+require '../includes/college_features.php';
 
 // Require admin role
 requireRole(ROLE_ADMIN);
@@ -19,6 +21,9 @@ $total_students = $db->fetchOne('SELECT COUNT(*) as count FROM users WHERE role 
 $total_classes = $db->fetchOne('SELECT COUNT(*) as count FROM classes')['count'];
 $total_forms = $db->fetchOne('SELECT COUNT(*) as count FROM forms')['count'];
 $active_forms = $db->fetchOne('SELECT COUNT(*) as count FROM forms WHERE status = ?', [FORM_STATUS_ACTIVE])['count'];
+$security_enabled = isSecurityControlsEnabled();
+$two_factor_enabled = isTwoFactorEnabled();
+$attendance_enabled = isAttendanceEnabled();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,11 +51,26 @@ $active_forms = $db->fetchOne('SELECT COUNT(*) as count FROM forms WHERE status 
                 <a href="classes.php" class="nav-item">
                     <span class="icon">🏫</span> Classes
                 </a>
+                <a href="courses.php" class="nav-item">
+                    <span class="icon">📚</span> Courses
+                </a>
                 <a href="forms.php" class="nav-item">
                     <span class="icon">📋</span> Forms
                 </a>
+                <a href="notices.php" class="nav-item">
+                    <span class="icon">📢</span> Posts & Notices
+                </a>
+                <a href="role-settings.php" class="nav-item">
+                    <span class="icon">👻</span> Role Settings
+                </a>
+                <a href="settings.php" class="nav-item">
+                    <span class="icon">🔐</span> Security Settings
+                </a>
                 <a href="audit-log.php" class="nav-item">
                     <span class="icon">📝</span> Audit Log
+                </a>
+                <a href="/index.php" class="nav-item">
+                    <span class="icon">🏠</span> Main Actions
                 </a>
             </nav>
         </aside>
@@ -100,12 +120,21 @@ $active_forms = $db->fetchOne('SELECT COUNT(*) as count FROM forms WHERE status 
                     </div>
                 </div>
 
+                <div class="card">
+                    <h3>System Security Status</h3>
+                    <p>Security Controls: <strong><?php echo $security_enabled ? 'Enabled' : 'Disabled'; ?></strong></p>
+                    <p>2FA Login: <strong><?php echo $two_factor_enabled ? 'Enabled' : 'Disabled'; ?></strong></p>
+                    <p>QR Attendance: <strong><?php echo $attendance_enabled ? 'Enabled' : 'Disabled'; ?></strong></p>
+                </div>
+
                 <!-- Quick Actions -->
                 <div class="quick-actions">
                     <h3>Quick Actions</h3>
                     <div class="action-buttons">
                         <a href="users.php?action=create" class="btn btn-primary">➕ Add User</a>
                         <a href="classes.php?action=create" class="btn btn-primary">➕ Add Class</a>
+                        <a href="notices.php" class="btn btn-secondary">📢 Post Notice</a>
+                        <a href="settings.php" class="btn btn-secondary">🔐 Security Controls</a>
                         <a href="forms.php" class="btn btn-secondary">📋 View All Forms</a>
                     </div>
                 </div>

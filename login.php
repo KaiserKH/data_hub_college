@@ -6,6 +6,8 @@ require 'config.php';
 require 'includes/auth.php';
 require 'includes/csrf.php';
 require 'includes/functions.php';
+require 'includes/app_features.php';
+require 'includes/encryption.php';
 
 // Start session
 startSession();
@@ -25,12 +27,41 @@ if (!isLoggedIn() && !empty($_COOKIE['remember_token'])) {
 // Handle POST request (login form submission)
 $errors = [];
 $email = '';
+$step = $_GET['step'] ?? 'login';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate CSRF token
     if (!validateCsrfToken()) {
         $errors[] = 'Security token invalid. Please try again.';
     } else {
+        $action = $_POST['_action'] ?? 'password_login';
+
+        if ($action === 'verify_2fa') {
+            $code = trim($_POST['otp_code'] ?? '');
+            $pending_user_id = $_SESSION['pending_2fa_user_id'] ?? null;
+            $pending_email = $_SESSION['pending_2fa_user_email'] ?? '';
+            $pending_remember = !empty($_SESSION['pending_2fa_remember']);
+            $step = 'verify2fa';
+
+            if (!$pending_user_id) {
+                $errors[] = 'No pending verification found. Please login again.';
+            } elseif (!preg_match('/^[0-9]{6}$/', $code)) {
+                $errors[] = 'Please enter a valid 6-digit code.';
+            } elseif (!verifyTwoFactorChallenge((int)$pending_user_id, $code)) {
+                $errors[] = 'Invalid or expired verification code.';
+            } else {
+                unset($_SESSION['pending_2fa_user_id'], $_SESSION['pending_2fa_user_email'], $_SESSION['pending_2fa_remember']);
+
+                if (loginUser((int)$pending_user_id, $pending_remember)) {
+                    auditLog('login_2fa_success', 'user', (int)$pending_user_id);
+                    redirect('/index.php');
+                } else {
+                    $errors[] = 'Login failed after verification. Please try again.';
+                }
+            }
+
+            $email = $pending_email;
+        } else {
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $remember = isset($_POST['remember']) && $_POST['remember'] === 'on';
@@ -62,6 +93,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Clear login attempts on successful login
                 clearLoginAttempts($email);
 
+                if (isTwoFactorEnabled()) {
+                    createTwoFactorChallenge($user);
+                    $_SESSION['pending_2fa_user_id'] = $user['id'];
+                    $_SESSION['pending_2fa_user_email'] = $user['email'];
+                    $_SESSION['pending_2fa_remember'] = $remember ? 1 : 0;
+                    $step = 'verify2fa';
+                } else {
+
                 // Log user in
                 if (loginUser($user['id'], $remember)) {
                     auditLog('login', 'user', $user['id']);
@@ -72,7 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $errors[] = 'Login failed. Please try again.';
                 }
+                }
             }
+        }
         }
     }
 }
@@ -197,7 +238,7 @@ $csrf_token = generateCsrfToken();
     <div class="login-container">
         <div class="login-box">
             <h1><?php echo APP_NAME; ?></h1>
-            <p>Sign in to your account</p>
+            <p><?php echo $step === 'verify2fa' ? 'Enter your verification code' : 'Sign in to your account'; ?></p>
 
             <?php if (!empty($errors)): ?>
                 <div class="alerts">
@@ -213,6 +254,30 @@ $csrf_token = generateCsrfToken();
                 </div>
             <?php endif; ?>
 
+            <?php if ($step === 'verify2fa'): ?>
+            <form method="POST" action="">
+                <div class="form-group">
+                    <label for="otp_code">6-digit verification code</label>
+                    <input
+                        type="text"
+                        id="otp_code"
+                        name="otp_code"
+                        placeholder="Enter code sent to your email"
+                        pattern="[0-9]{6}"
+                        maxlength="6"
+                        required
+                        autocomplete="one-time-code"
+                    >
+                    <small style="display:block;color:#666;margin-top:0.4rem;">Code sent to: <?php echo htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?></small>
+                </div>
+
+                <input type="hidden" name="_action" value="verify_2fa">
+                <input type="hidden" name="_csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+
+                <button type="submit" class="btn-login">Verify & Sign In</button>
+                <a href="/login.php" style="display:block;text-align:center;margin-top:1rem;">Back to login</a>
+            </form>
+            <?php else: ?>
             <form method="POST" action="">
                 <div class="form-group">
                     <label for="email">Email</label>
@@ -244,10 +309,12 @@ $csrf_token = generateCsrfToken();
                     <label for="remember">Remember me</label>
                 </div>
 
+                <input type="hidden" name="_action" value="password_login">
                 <input type="hidden" name="_csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
 
                 <button type="submit" class="btn-login">Sign In</button>
             </form>
+            <?php endif; ?>
 
             <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #ddd;">
             <p style="text-align: center; color: #666; font-size: 0.9rem;">

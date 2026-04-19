@@ -5,12 +5,17 @@
 require '../config.php';
 require '../includes/auth.php';
 require '../includes/functions.php';
+require '../includes/app_features.php';
 
 // Require student role
 requireRole(ROLE_STUDENT);
 
 $user = getCurrentUser();
 $db = getDB();
+
+processExpiredAttendanceSessions();
+$attendance_enabled = isAttendanceEnabled();
+$notices = getVisibleNotices(ROLE_STUDENT, 3);
 
 // Get student's class
 $class = getUserClass($user['id']);
@@ -56,6 +61,12 @@ $completed_count = count($completed_forms);
                 <a href="forms.php" class="nav-item">
                     <span class="icon">📋</span> Forms
                 </a>
+                <a href="attendance-scan.php" class="nav-item">
+                    <span class="icon">🧾</span> Attendance
+                </a>
+                <a href="/index.php" class="nav-item">
+                    <span class="icon">🏠</span> Main Actions
+                </a>
             </nav>
         </aside>
 
@@ -94,6 +105,31 @@ $completed_count = count($completed_forms);
                         <div class="stat-label">Completed</div>
                         <div class="stat-value" style="color: #51cf66;"><?php echo $completed_count; ?></div>
                     </div>
+                </div>
+
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <div class="action-buttons">
+                        <a href="forms.php" class="btn btn-primary">📋 Open Forms</a>
+                        <a href="attendance-scan.php" class="btn btn-secondary">🧾 Mark Attendance</a>
+                    </div>
+                    <?php if (!$attendance_enabled): ?>
+                        <p style="color:#666;margin-top:0.8rem;">Attendance is currently disabled by admin.</p>
+                    <?php endif; ?>
+                </div>
+
+                <div class="card">
+                    <h3>📢 Latest Notices</h3>
+                    <?php if (empty($notices)): ?>
+                        <p style="color:#666;">No notices available.</p>
+                    <?php else: ?>
+                        <?php foreach ($notices as $notice): ?>
+                            <div style="padding:0.7rem 0;border-bottom:1px solid #ddd;">
+                                <strong><?php echo htmlspecialchars($notice['title'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                <p style="margin:0.4rem 0;"><?php echo nl2br(htmlspecialchars($notice['content'], ENT_QUOTES, 'UTF-8')); ?></p>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Pending Forms Section -->

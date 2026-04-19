@@ -5,12 +5,16 @@
 require '../config.php';
 require '../includes/auth.php';
 require '../includes/functions.php';
+require '../includes/app_features.php';
 
 // Require teacher role
 requireRole(ROLE_TEACHER);
 
 $user = getCurrentUser();
 $db = getDB();
+
+processExpiredAttendanceSessions();
+$attendance_enabled = isAttendanceEnabled();
 
 // Get teacher's forms
 $forms = $db->fetchAll('
@@ -53,6 +57,12 @@ $total_responses = array_sum(array_column($forms, 'response_count'));
                 <a href="responses.php" class="nav-item">
                     <span class="icon">📊</span> Responses
                 </a>
+                <a href="attendance.php" class="nav-item">
+                    <span class="icon">🧾</span> QR Attendance
+                </a>
+                <a href="/index.php" class="nav-item">
+                    <span class="icon">🏠</span> Main Actions
+                </a>
             </nav>
         </aside>
 
@@ -94,6 +104,7 @@ $total_responses = array_sum(array_column($forms, 'response_count'));
                     <h3>Quick Actions</h3>
                     <div class="action-buttons">
                         <a href="form-create.php" class="btn btn-primary">➕ Create Form</a>
+                        <a href="attendance.php" class="btn btn-primary">🧾 Start Attendance</a>
                         <a href="forms.php" class="btn btn-secondary">📋 View All Forms</a>
                         <a href="responses.php" class="btn btn-secondary">📊 View Responses</a>
                     </div>
