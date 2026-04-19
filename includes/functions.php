@@ -12,6 +12,90 @@ function redirect($url) {
 }
 
 /**
+ * Get the web path prefix where this app is running (e.g. /subdir/app).
+ */
+function getAppUrlPrefix() {
+    $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+    $dir = str_replace('\\', '/', dirname($script_name));
+
+    if ($dir === '/' || $dir === '.' || $dir === '\\') {
+        return '';
+    }
+
+    return rtrim($dir, '/');
+}
+
+/**
+ * Build a safe local redirect target and fall back if target is invalid.
+ */
+function getSafeRedirectPath($target, $default = '/index.php') {
+    if (!is_string($target) || trim($target) === '') {
+        return $default;
+    }
+
+    $parsed = @parse_url($target);
+    if ($parsed === false || isset($parsed['scheme']) || isset($parsed['host'])) {
+        return $default;
+    }
+
+    $path = $parsed['path'] ?? '';
+    if ($path === '') {
+        $path = $default;
+    }
+    if ($path[0] !== '/') {
+        $path = '/' . $path;
+    }
+
+    $path = preg_replace('#/+#', '/', $path);
+    if ($path === null || strpos($path, "\0") !== false || strpos($path, '..') !== false) {
+        return $default;
+    }
+
+    $prefix = getAppUrlPrefix();
+    $check_path = $path;
+    if ($prefix !== '') {
+        if ($check_path === $prefix) {
+            $check_path = '/';
+        } elseif (strpos($check_path, $prefix . '/') === 0) {
+            $check_path = substr($check_path, strlen($prefix));
+        }
+    }
+
+    $base_real = realpath(BASE_PATH);
+    if ($base_real === false) {
+        return $default;
+    }
+
+    $fs_path = $check_path === '/'
+        ? $base_real . '/index.php'
+        : $base_real . '/' . ltrim($check_path, '/');
+
+    $fs_real = realpath($fs_path);
+    if ($fs_real === false) {
+        return $default;
+    }
+
+    if (strpos($fs_real, $base_real) !== 0) {
+        return $default;
+    }
+
+    if (is_dir($fs_real)) {
+        $dir_index = realpath($fs_real . '/index.php');
+        if ($dir_index === false || !is_file($dir_index)) {
+            return $default;
+        }
+        $fs_real = $dir_index;
+    } elseif (!is_file($fs_real)) {
+        return $default;
+    }
+
+    $safe_path = '/' . ltrim(str_replace('\\', '/', substr($fs_real, strlen($base_real))), '/');
+    $query = isset($parsed['query']) && $parsed['query'] !== '' ? '?' . $parsed['query'] : '';
+
+    return $safe_path . $query;
+}
+
+/**
  * Return JSON response
  */
 function jsonResponse($success, $data = null, $message = null, $code = 200) {

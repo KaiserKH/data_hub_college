@@ -14,13 +14,15 @@ startSession();
 
 // If already logged in, redirect to home
 if (isLoggedIn()) {
-    redirect('/');
+    $redirect_target = getSafeRedirectPath($_GET['redirect'] ?? '/index.php', '/index.php');
+    redirect($redirect_target);
 }
 
 // Check if remember token is valid
 if (!isLoggedIn() && !empty($_COOKIE['remember_token'])) {
     if (checkRememberToken()) {
-        redirect('/');
+        $redirect_target = getSafeRedirectPath($_GET['redirect'] ?? '/index.php', '/index.php');
+        redirect($redirect_target);
     }
 }
 
@@ -106,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     auditLog('login', 'user', $user['id']);
 
                     // Redirect to intended page or home
-                    $redirect = $_GET['redirect'] ?? '/index.php';
+                    $redirect = getSafeRedirectPath($_GET['redirect'] ?? '/index.php', '/index.php');
                     redirect($redirect);
                 } else {
                     $errors[] = 'Login failed. Please try again.';

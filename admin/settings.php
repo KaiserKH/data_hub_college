@@ -89,12 +89,12 @@ $csrf_token = generateCsrfToken();
 
                 <div class="card">
                     <h2>Feature Toggles</h2>
-                    <p style="color:#666;margin-bottom:1rem;">System access remains available by default. You can activate security and attendance controls from here.</p>
+                    <p style="color:#666;margin-bottom:1rem;">System access remains available by default. Enable Security Controls to enforce role-based page protection and optional 2FA.</p>
 
                     <form method="POST" class="form">
                         <div class="form-group" style="flex-direction: row; align-items: center; gap: 0.75rem;">
                             <input type="checkbox" id="security_controls_enabled" name="security_controls_enabled" <?php echo $security_enabled ? 'checked' : ''; ?>>
-                            <label for="security_controls_enabled" style="margin:0;">Enable Security Controls</label>
+                            <label for="security_controls_enabled" style="margin:0;">Enable Role-Based Page Protection & Security Controls</label>
                         </div>
 
                         <div class="form-group" style="flex-direction: row; align-items: center; gap: 0.75rem;">
