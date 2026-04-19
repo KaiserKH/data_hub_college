@@ -1,0 +1,53 @@
+# Environment configuration
+.env
+.env.local
+.env.*.local
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# PHP
+composer.lock
+vendor/
+*.phar
+
+# Logs
+logs/
+*.log
+
+# User uploads
+assets/uploads/*
+!assets/uploads/.gitkeep
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Node modules (if using npm)
+node_modules/
+package-lock.json
+
+# Build artifacts
+dist/
+build/
+
+# OS files
+.AppleDouble
+.LSOverride
+._*
+.localized
+
+# PHP unit
+.phpunit.result.cache
+
+# Cache
+.cache/
