@@ -303,6 +303,6 @@ INSERT IGNORE INTO users (name, email, password, role, is_active) VALUES
 
 -- Default feature switches (open access with optional security)
 INSERT IGNORE INTO app_settings (setting_key, setting_value) VALUES
-('security_controls_enabled', '0'),
+('security_controls_enabled', '1'),
 ('two_factor_enabled', '0'),
 ('attendance_enabled', '0');

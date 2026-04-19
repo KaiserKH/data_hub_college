@@ -77,11 +77,6 @@ function requireRole($role) {
     startSession();
     requireLogin();
 
-    // Role-based access can be toggled by admin security controls.
-    if (!isRoleProtectionEnabled()) {
-        return;
-    }
-
     if (!hasRole($role)) {
         http_response_code(403);
         die('Access Denied');
@@ -95,32 +90,10 @@ function requireAnyRole($roles) {
     startSession();
     requireLogin();
 
-    if (!isRoleProtectionEnabled()) {
-        return;
-    }
-
     if (!hasAnyRole((array)$roles)) {
         http_response_code(403);
         die('Access Denied');
     }
-}
-
-/**
- * Role checks are enforced only when security controls are enabled.
- */
-function isRoleProtectionEnabled() {
-    if (!function_exists('isSecurityControlsEnabled')) {
-        $app_features_file = __DIR__ . '/app_features.php';
-        if (is_file($app_features_file)) {
-            require_once $app_features_file;
-        }
-    }
-
-    if (function_exists('isSecurityControlsEnabled')) {
-        return isSecurityControlsEnabled();
-    }
-
-    return true;
 }
 
 /**
